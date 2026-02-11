@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,11 +19,12 @@ const navItems = [
   { href: '/buyer/candidates', label: 'Candidates', icon: Users },
   { href: '/buyer/interviews', label: 'Interviews', icon: Video },
   { href: '/buyer/messages', label: 'Messages', icon: MessageSquare },
-  { href: '/hiring-flow', label: 'Hiring Flow', icon: Workflow },
+  { href: '/buyer/job-posts?openHiringFlow=true', label: 'Hiring Flow', icon: Workflow },
 ];
 
 export function BuyerSidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { buyerData, logout } = useAuth();
 
   const getInitials = () => {
@@ -46,7 +47,11 @@ export function BuyerSidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const hrefPath = item.href.split('?')[0];
+          const isHiringFlow = item.label === 'Hiring Flow';
+          const isActive = isHiringFlow
+            ? searchParams.get('openHiringFlow') === 'true'
+            : pathname.startsWith(hrefPath) && !isHiringFlow;
           const Icon = item.icon;
 
           return (

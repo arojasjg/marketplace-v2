@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,11 +22,24 @@ import {
 import { Plus, AlertCircle } from 'lucide-react';
 import type { BuyerJobPostStatus } from '@/lib/types';
 import { toast } from 'sonner';
+import { HiringFlowDialog } from '@/components/hiring-flow/hiring-flow-dialog';
 
 export default function BuyerJobPostsPage() {
   const { buyerData, updateBuyerJobPostStatus } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [incompleteDialogOpen, setIncompleteDialogOpen] = useState(false);
   const [selectedIncompletePost, setSelectedIncompletePost] = useState<string | null>(null);
+  const [hiringFlowOpen, setHiringFlowOpen] = useState(false);
+
+  // Auto-open hiring flow dialog when navigated from "Hiring Flow" sidebar tab
+  useEffect(() => {
+    if (searchParams.get('openHiringFlow') === 'true') {
+      setHiringFlowOpen(true);
+      // Clean up the URL param
+      router.replace('/buyer/job-posts', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   if (!buyerData) return null;
 
@@ -60,7 +74,7 @@ export default function BuyerJobPostsPage() {
           <h1 className="text-2xl font-semibold text-gray-900">Job Post</h1>
           <p className="text-gray-500 text-sm mt-1">Manage your job listings and track applicants</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setHiringFlowOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Job Post
         </Button>
@@ -163,6 +177,9 @@ export default function BuyerJobPostsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Hiring Flow Dialog */}
+      <HiringFlowDialog open={hiringFlowOpen} onOpenChange={setHiringFlowOpen} />
 
       {/* Incomplete Job Post Dialog */}
       <Dialog open={incompleteDialogOpen} onOpenChange={setIncompleteDialogOpen}>
