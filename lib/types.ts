@@ -99,6 +99,30 @@ export interface BuyerJobPost {
   requiredTasks: string[];
   description: string;
   monthlyBudget: number;
+  // New fields from job post creation flow
+  taskCategories?: string[];
+  categoryColor?: string;
+  workStartDate?: 'immediately' | 'within-one-week' | 'flexible';
+  weeklyHours?: 'part-time' | 'full-time';
+  timezone?: string;
+  overlapPreference?: 'exact' | 'partial' | 'flexible';
+  softwareTools?: string[];
+  culturalFit?: 'independent' | 'structured' | 'not-sure';
+  languages?: string[];
+  completedSteps?: number;
+}
+
+export interface JobPostDraft {
+  selectedTasks: { id: string; name: string; category: string; frequency?: string; importance?: string }[];
+  workStartDate?: 'immediately' | 'within-one-week' | 'flexible';
+  weeklyHours?: 'part-time' | 'full-time';
+  timezone?: string;
+  overlapPreference?: 'exact' | 'partial' | 'flexible';
+  softwareTools?: string[];
+  culturalFit?: 'independent' | 'structured' | 'not-sure';
+  languages?: string[];
+  monthlyBudget?: number;
+  jobName?: string;
 }
 
 export type CandidateSource = 'recommended' | 'applied';

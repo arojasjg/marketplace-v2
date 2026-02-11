@@ -19,10 +19,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Plus, AlertCircle } from 'lucide-react';
+import { Plus, AlertCircle, ArrowRight } from 'lucide-react';
 import type { BuyerJobPostStatus } from '@/lib/types';
 import { toast } from 'sonner';
-import { HiringFlowDialog } from '@/components/hiring-flow/hiring-flow-dialog';
+import { HiringFlowFullScreen } from '@/components/hiring-flow/hiring-flow-dialog';
 
 export default function BuyerJobPostsPage() {
   const { buyerData, updateBuyerJobPostStatus } = useAuth();
@@ -30,23 +30,30 @@ export default function BuyerJobPostsPage() {
   const router = useRouter();
   const [incompleteDialogOpen, setIncompleteDialogOpen] = useState(false);
   const [selectedIncompletePost, setSelectedIncompletePost] = useState<string | null>(null);
-  const [hiringFlowOpen, setHiringFlowOpen] = useState(false);
+  const [showHiringFlow, setShowHiringFlow] = useState(false);
 
-  // Auto-open hiring flow dialog when navigated from "Hiring Flow" sidebar tab
+  // Auto-open hiring flow when navigated from "Hiring Flow" sidebar tab
   useEffect(() => {
     if (searchParams.get('openHiringFlow') === 'true') {
-      setHiringFlowOpen(true);
-      // Clean up the URL param
+      setShowHiringFlow(true);
       router.replace('/buyer/job-posts', { scroll: false });
     }
   }, [searchParams, router]);
 
   if (!buyerData) return null;
 
+  // If hiring flow is active, render it full-screen in the content area
+  if (showHiringFlow) {
+    return (
+      <div className="fixed inset-0 left-64 z-20 bg-white">
+        <HiringFlowFullScreen onClose={() => setShowHiringFlow(false)} />
+      </div>
+    );
+  }
+
   const handleStatusChange = (postId: string, newStatus: BuyerJobPostStatus) => {
     const jobPost = buyerData.jobPosts.find(p => p.id === postId);
     
-    // Check if trying to activate an incomplete job post
     if (newStatus === 'active' && jobPost && !jobPost.isComplete) {
       setSelectedIncompletePost(postId);
       setIncompleteDialogOpen(true);
@@ -66,19 +73,67 @@ export default function BuyerJobPostsPage() {
     return statusStyles[status];
   };
 
+  const getCategoryColor = (post: typeof buyerData.jobPosts[0]) => {
+    const color = post.categoryColor;
+    if (color === 'blue') return 'text-blue-600';
+    if (color === 'purple') return 'text-purple-600';
+    if (color === 'orange') return 'text-orange-600';
+    return 'text-gray-900';
+  };
+
+  // Separate incomplete and complete posts
+  const incompletePosts = buyerData.jobPosts.filter(p => !p.isComplete);
+  const completePosts = buyerData.jobPosts.filter(p => p.isComplete);
+
   return (
     <div className="max-w-6xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Job Post</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Job Posts</h1>
           <p className="text-gray-500 text-sm mt-1">Manage your job listings and track applicants</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setHiringFlowOpen(true)}>
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setShowHiringFlow(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Job Post
         </Button>
       </div>
+
+      {/* Incomplete Posts Banner */}
+      {incompletePosts.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {incompletePosts.map((post) => (
+            <div key={post.id} className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className={`font-medium ${getCategoryColor(post)}`}>
+                    {post.name}
+                  </p>
+                  <p className="text-sm text-amber-700">
+                    Complete your job post to make it active
+                    {post.completedSteps ? ` (${post.completedSteps}/9 steps completed)` : ''}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white border-amber-300 text-amber-800 hover:bg-amber-100"
+                onClick={() => {
+                  // TODO: Resume editing specific post
+                  toast.info('Resume editing coming soon');
+                }}
+              >
+                Complete Job Post
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Job Posts Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -113,7 +168,9 @@ export default function BuyerJobPostsPage() {
                 <tr key={jobPost.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{jobPost.name}</span>
+                      <span className={`font-medium ${getCategoryColor(jobPost)}`}>
+                        {jobPost.name}
+                      </span>
                       {!jobPost.isComplete && (
                         <Badge variant="outline" className="text-xs bg-transparent text-orange-600 border-orange-200">
                           Incomplete
@@ -178,9 +235,6 @@ export default function BuyerJobPostsPage() {
         </table>
       </div>
 
-      {/* Hiring Flow Dialog */}
-      <HiringFlowDialog open={hiringFlowOpen} onOpenChange={setHiringFlowOpen} />
-
       {/* Incomplete Job Post Dialog */}
       <Dialog open={incompleteDialogOpen} onOpenChange={setIncompleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
@@ -214,7 +268,6 @@ export default function BuyerJobPostsPage() {
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
               onClick={() => {
                 setIncompleteDialogOpen(false);
-                // TODO: Navigate to job post edit page
                 toast.info('Job post editor coming soon');
               }}
             >

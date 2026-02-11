@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CustomSlider } from '../custom-slider';
-import { FloatingNextButton } from '../floating-next-button';
 import { TASKS, Task } from '@/lib/hiring-flow-data/tasks';
 import { Scale, Users, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -155,29 +154,32 @@ export function Step1TaskSelection({ onNext }: Step1Props) {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-white pt-16 pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col">
-        <div className="text-center mb-4">
-          <h1 className="text-3xl md:text-4xl font-light tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-3">
+    <div className="bg-white pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col">
+        <div className="text-center mb-6 pt-8">
+          <h1 className="text-3xl md:text-4xl font-light tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-3">
             Select Tasks for Your Stafi Representative
           </h1>
           <p className="text-base font-light text-gray-600 max-w-3xl mx-auto mb-4">
-            Choose the responsibilities you need help with. We'll find and train the perfect candidate.
+            Choose the responsibilities you need help with. We will find and train the perfect candidate.
           </p>
           
-          {selectedTasks.length > 0 && (
-            <div className="inline-block p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg mb-2">
-              <div className="text-4xl font-bold text-white mb-1">
-                {selectedTasks.length}
+          <div className="flex items-center justify-center gap-4">
+            {selectedTasks.length > 0 && (
+              <div className="inline-flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-md">
+                <span className="text-2xl font-bold text-white">
+                  {selectedTasks.length}
+                </span>
+                <span className="text-xs font-light tracking-widest uppercase text-white opacity-95">
+                  Task{selectedTasks.length !== 1 ? 's' : ''} Selected
+                </span>
               </div>
-              <div className="text-xs font-light tracking-widest uppercase text-white opacity-95">
-                Task{selectedTasks.length !== 1 ? 's' : ''} Selected
-              </div>
-            </div>
-          )}
+            )}
+            <p className="text-sm text-gray-500">Up to 12 tasks can be selected</p>
+          </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6 flex-1 overflow-y-auto pb-4">
+        <div className="grid lg:grid-cols-3 gap-6 pb-4">
           {renderCategory('Legal', sortedLegalTasks, 'legal')}
           {renderCategory('People Facing', sortedPeopleTasks, 'people-facing')}
           {renderCategory('Admin', sortedAdminTasks, 'admin')}
@@ -185,10 +187,15 @@ export function Step1TaskSelection({ onNext }: Step1Props) {
       </div>
 
       {selectedTasks.length > 0 && (
-        <FloatingNextButton
-          onClick={() => onNext(selectedTasks)}
-          label="Continue"
-        />
+        <div className="sticky bottom-0 bg-white border-t border-gray-100 py-4 px-8 flex justify-end">
+          <button
+            onClick={() => onNext(selectedTasks)}
+            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            Continue
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
       )}
     </div>
   );

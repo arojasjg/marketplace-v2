@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { UserData, Resume, Assessment, BuyerData, UserRole, BuyerJobPostStatus } from '@/lib/types';
+import type { UserData, Resume, Assessment, BuyerData, UserRole, BuyerJobPostStatus, BuyerJobPost, JobPostDraft } from '@/lib/types';
 import {
   initialUserData,
   loadUserData,
@@ -34,6 +34,7 @@ interface AuthContextType {
   // Buyer functions
   updateBuyerJobPostStatus: (postId: string, status: BuyerJobPostStatus) => void;
   toggleCandidateFavorite: (candidateId: string) => void;
+  addBuyerJobPost: (draft: JobPostDraft, isComplete: boolean) => string;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -237,6 +238,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setBuyerData(newBuyerData);
   };
 
+  const addBuyerJobPost = (draft: JobPostDraft, isComplete: boolean): string => {
+    if (!buyerData) return '';
+
+    // Derive name from task categories
+    const categories = [...new Set(draft.selectedTasks.map(t => t.category))];
+    const categoryLabels = categories.map(c => {
+      if (c === 'legal') return 'Legal';
+      if (c === 'people-facing') return 'People Facing';
+      if (c === 'admin') return 'Admin';
+      return c;
+    });
+    const autoName = draft.jobName || categoryLabels.join(' / ') || 'Untitled Job Post';
+
+    // Derive color from first category
+    const firstCat = categories[0] || 'admin';
+    const categoryColor = firstCat === 'legal' ? 'blue' : firstCat === 'people-facing' ? 'purple' : 'orange';
+
+    // Count completed steps
+    let completedSteps = 0;
+    if (draft.selectedTasks.length > 0) completedSteps++;
+    if (draft.workStartDate) completedSteps++;
+    if (draft.weeklyHours || draft.timezone || draft.overlapPreference) completedSteps++;
+    if (draft.softwareTools && draft.softwareTools.length > 0) completedSteps++;
+    if (draft.culturalFit) completedSteps++;
+    if (draft.languages && draft.languages.length > 0) completedSteps++;
+    if (draft.monthlyBudget && draft.monthlyBudget > 0) completedSteps++;
+    // Steps 8 (review) and 9 (post) don't have data fields, they're action steps
+    if (isComplete) completedSteps = 9;
+
+    const newId = `bjp-${Date.now()}`;
+    const newPost: BuyerJobPost = {
+      id: newId,
+      name: autoName,
+      totalCandidates: 0,
+      newCandidates: 0,
+      publishedDate: new Date().toISOString().split('T')[0],
+      daysSincePublished: 0,
+      status: isComplete ? 'active' : 'paused',
+      isComplete,
+      requiredTasks: draft.selectedTasks.map(t => t.id),
+      description: `${autoName} - ${draft.selectedTasks.length} task${draft.selectedTasks.length !== 1 ? 's' : ''} selected`,
+      monthlyBudget: draft.monthlyBudget || 0,
+      taskCategories: categoryLabels,
+      categoryColor,
+      workStartDate: draft.workStartDate,
+      weeklyHours: draft.weeklyHours,
+      timezone: draft.timezone,
+      overlapPreference: draft.overlapPreference,
+      softwareTools: draft.softwareTools,
+      culturalFit: draft.culturalFit,
+      languages: draft.languages,
+      completedSteps,
+    };
+
+    const newBuyerData = {
+      ...buyerData,
+      jobPosts: [newPost, ...buyerData.jobPosts],
+    };
+
+    saveBuyerData(newBuyerData);
+    setBuyerData(newBuyerData);
+    return newId;
+  };
+
   const toggleCandidateFavorite = (candidateId: string) => {
     if (!buyerData) return;
     
@@ -275,6 +340,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toggleSaveJobPost,
         updateBuyerJobPostStatus,
         toggleCandidateFavorite,
+        addBuyerJobPost,
       }}
     >
       {children}

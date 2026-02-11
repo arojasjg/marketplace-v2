@@ -1,138 +1,226 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { StepProgress } from './step-progress';
 import { Step1TaskSelection } from './steps/step1-task-selection';
+import { Step2WorkStartDate } from './steps/step2-work-start-date';
+import { Step3ScheduleAvailability } from './steps/step3-schedule-availability';
+import { Step4SoftwareTools } from './steps/step4-software-tools';
+import { Step5CulturalFit } from './steps/step5-cultural-fit';
+import { Step6LanguageRequirements } from './steps/step6-language-requirements';
+import { Step7BudgetSelection } from './steps/step7-budget-selection';
+import { Step8JobDescription } from './steps/step8-job-description';
+import { Step9JobPosting } from './steps/step9-job-posting';
 import { Task } from '@/lib/hiring-flow-data/tasks';
-import { X } from 'lucide-react';
+import type { JobPostDraft } from '@/lib/types';
+import { useAuth } from '@/contexts/auth-context';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { X, Save, Trash2 } from 'lucide-react';
 
-interface HiringFlowDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface HiringFlowFullScreenProps {
+  onClose: () => void;
 }
 
-export function HiringFlowDialog({ open, onOpenChange }: HiringFlowDialogProps) {
+export function HiringFlowFullScreen({ onClose }: HiringFlowFullScreenProps) {
+  const { addBuyerJobPost } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
+  const [showExitPrompt, setShowExitPrompt] = useState(false);
+  const [draft, setDraft] = useState<JobPostDraft>({
+    selectedTasks: [],
+    languages: ['English'],
+  });
 
-  const handleStep1Next = (tasks: Task[]) => {
-    setSelectedTasks(tasks);
-    setCurrentStep(2);
+  const updateDraft = (updates: Partial<JobPostDraft>) => {
+    setDraft((prev) => ({ ...prev, ...updates }));
   };
 
-  const handleRestart = () => {
-    setCurrentStep(1);
-    setSelectedTasks([]);
+  const handleExit = () => {
+    // If no data entered yet, just close
+    if (draft.selectedTasks.length === 0) {
+      onClose();
+      return;
+    }
+    setShowExitPrompt(true);
   };
 
-  const handleClose = () => {
-    onOpenChange(false);
-    // Reset state when closing
-    setTimeout(() => {
-      setCurrentStep(1);
-      setSelectedTasks([]);
-    }, 300);
+  const handleSaveAndExit = () => {
+    addBuyerJobPost(draft, false);
+    toast.success('Job post saved as draft');
+    setShowExitPrompt(false);
+    onClose();
+  };
+
+  const handleDiscard = () => {
+    setShowExitPrompt(false);
+    onClose();
+  };
+
+  const handlePostJob = () => {
+    addBuyerJobPost(draft, true);
+    toast.success('Job post published successfully!');
+    onClose();
+  };
+
+  const handleSaveDraft = () => {
+    addBuyerJobPost(draft, false);
+    toast.success('Job post saved as draft');
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] p-0 overflow-hidden border-0 rounded-xl [&>button]:hidden">
-        {/* Close button */}
+    <div className="h-full flex flex-col bg-white">
+      {/* Top bar with close */}
+      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 shrink-0">
+        <h2 className="text-sm font-medium text-gray-900">Create New Job Post</h2>
         <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 z-[70] h-10 w-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
-          aria-label="Close hiring flow"
+          onClick={handleExit}
+          className="h-8 w-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          aria-label="Exit job post creation"
         >
-          <X className="h-5 w-5 text-gray-600" />
+          <X className="h-5 w-5" />
         </button>
+      </div>
 
-        <div className="h-full overflow-y-auto bg-white">
-          <StepProgress currentStep={currentStep} totalSteps={12} />
+      {/* Progress */}
+      <StepProgress currentStep={currentStep} totalSteps={9} />
 
-          {currentStep === 1 && (
-            <Step1TaskSelection onNext={handleStep1Next} />
-          )}
+      {/* Steps content (scrollable) */}
+      <div className="flex-1 overflow-y-auto">
+        {currentStep === 1 && (
+          <Step1TaskSelection
+            onNext={(tasks: Task[]) => {
+              updateDraft({ selectedTasks: tasks.map(t => ({ id: t.id, name: t.name, category: t.category, frequency: t.frequency, importance: t.importance })) });
+              setCurrentStep(2);
+            }}
+          />
+        )}
 
-          {currentStep === 2 && (
-            <div className="h-full overflow-hidden bg-white pt-32 pb-20">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center">
-                  <h1 className="text-3xl md:text-4xl font-light tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-6">
-                    Step 2: Job Description
-                  </h1>
-                  <p className="text-lg text-gray-600 mb-8">
-                    You selected {selectedTasks.length} task{selectedTasks.length !== 1 ? 's' : ''}.
-                  </p>
-                  <div className="text-left max-w-3xl mx-auto bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
-                    <h2 className="text-xl font-semibold mb-4">Selected Tasks:</h2>
-                    <ul className="space-y-2">
-                      {selectedTasks.map(task => (
-                        <li key={task.id} className="text-gray-700">
-                          {task.name}
-                          {task.frequency && <span className="text-sm text-gray-500"> ({task.frequency})</span>}
-                          {task.importance && <span className="text-sm text-gray-500"> - {task.importance} priority</span>}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="mt-8">
-                    <button
-                      onClick={() => setCurrentStep(1)}
-                      className="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors mr-4"
-                    >
-                      Back
-                    </button>
-                    <button
-                      onClick={() => setCurrentStep(3)}
-                      className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
-                    >
-                      Continue
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+        {currentStep === 2 && (
+          <Step2WorkStartDate
+            initialValue={draft.workStartDate}
+            onNext={(value) => {
+              updateDraft({ workStartDate: value });
+              setCurrentStep(3);
+            }}
+            onBack={() => setCurrentStep(1)}
+          />
+        )}
 
-          {currentStep >= 3 && (
-            <div className="h-full overflow-hidden bg-white pt-32 pb-20">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h1 className="text-3xl md:text-4xl font-light tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-6">
-                  Step {currentStep}
-                </h1>
-                <p className="text-lg text-gray-600 mb-8">
-                  Additional steps are being implemented. This demonstrates the integration pattern.
-                </p>
-                <div className="space-x-4">
-                  <button
-                    onClick={() => setCurrentStep(currentStep - 1)}
-                    className="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                  >
-                    Back
-                  </button>
-                  {currentStep < 12 && (
-                    <button
-                      onClick={() => setCurrentStep(currentStep + 1)}
-                      className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
-                    >
-                      Next
-                    </button>
-                  )}
-                  {currentStep === 12 && (
-                    <button
-                      onClick={handleRestart}
-                      className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
-                    >
-                      Restart
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        {currentStep === 3 && (
+          <Step3ScheduleAvailability
+            initialWeeklyHours={draft.weeklyHours}
+            initialTimezone={draft.timezone}
+            initialOverlap={draft.overlapPreference}
+            onNext={(data) => {
+              updateDraft(data);
+              setCurrentStep(4);
+            }}
+            onBack={() => setCurrentStep(2)}
+          />
+        )}
+
+        {currentStep === 4 && (
+          <Step4SoftwareTools
+            initialTools={draft.softwareTools}
+            onNext={(tools) => {
+              updateDraft({ softwareTools: tools });
+              setCurrentStep(5);
+            }}
+            onBack={() => setCurrentStep(3)}
+          />
+        )}
+
+        {currentStep === 5 && (
+          <Step5CulturalFit
+            initialValue={draft.culturalFit}
+            onNext={(value) => {
+              updateDraft({ culturalFit: value });
+              setCurrentStep(6);
+            }}
+            onBack={() => setCurrentStep(4)}
+          />
+        )}
+
+        {currentStep === 6 && (
+          <Step6LanguageRequirements
+            initialLanguages={draft.languages}
+            onNext={(languages) => {
+              updateDraft({ languages });
+              setCurrentStep(7);
+            }}
+            onBack={() => setCurrentStep(5)}
+          />
+        )}
+
+        {currentStep === 7 && (
+          <Step7BudgetSelection
+            initialBudget={draft.monthlyBudget}
+            onNext={(budget) => {
+              updateDraft({ monthlyBudget: budget });
+              setCurrentStep(8);
+            }}
+            onBack={() => setCurrentStep(6)}
+          />
+        )}
+
+        {currentStep === 8 && (
+          <Step8JobDescription
+            draft={draft}
+            onUpdate={updateDraft}
+            onNext={() => setCurrentStep(9)}
+            onBack={() => setCurrentStep(7)}
+          />
+        )}
+
+        {currentStep === 9 && (
+          <Step9JobPosting
+            draft={draft}
+            onPost={handlePostJob}
+            onSave={handleSaveDraft}
+            onBack={() => setCurrentStep(8)}
+          />
+        )}
+      </div>
+
+      {/* Exit Prompt Dialog */}
+      <Dialog open={showExitPrompt} onOpenChange={setShowExitPrompt}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save your progress?</DialogTitle>
+            <DialogDescription>
+              Would you like to save your progress or discard it?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600">
+              If saved, this job post will appear as &quot;Incomplete&quot; in your Job Posts tab. You can return to finish it later.
+            </p>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={handleDiscard}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-sm transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+              Discard
+            </button>
+            <button
+              onClick={handleSaveAndExit}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium text-sm transition-colors"
+            >
+              <Save className="h-4 w-4" />
+              Save Progress
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
