@@ -1,3 +1,4 @@
+// Test comment to verify PR workflow
 'use client';
 
 import { useEffect } from 'react';
