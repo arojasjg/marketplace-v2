@@ -8,6 +8,8 @@ interface Step2Props {
   initialValue?: 'immediately' | 'within-one-week' | 'flexible';
   onNext: (value: 'immediately' | 'within-one-week' | 'flexible') => void;
   onBack: () => void;
+  onSave: () => void;
+  onSkip: () => void;
 }
 
 const OPTIONS = [
@@ -31,7 +33,7 @@ const OPTIONS = [
   },
 ];
 
-export function Step2WorkStartDate({ initialValue, onNext, onBack }: Step2Props) {
+export function Step2WorkStartDate({ initialValue, onNext, onBack, onSave, onSkip }: Step2Props) {
   const [selected, setSelected] = useState<typeof OPTIONS[number]['value'] | undefined>(initialValue);
 
   return (
@@ -79,26 +81,40 @@ export function Step2WorkStartDate({ initialValue, onNext, onBack }: Step2Props)
         </div>
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-gray-100 py-4 px-8 flex justify-between">
+      <div className="sticky bottom-0 bg-white border-t border-gray-100 py-4 px-8 flex items-center justify-between">
         <button
           onClick={onBack}
           className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
         >
           Back
         </button>
-        <button
-          onClick={() => selected && onNext(selected)}
-          disabled={!selected}
-          className={cn(
-            'px-8 py-3 rounded-lg font-medium transition-colors flex items-center gap-2',
-            selected
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          )}
-        >
-          Continue
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onSave}
+            className="px-6 py-3 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors text-sm"
+          >
+            Save
+          </button>
+          <button
+            onClick={onSkip}
+            className="px-6 py-3 border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 rounded-lg font-medium transition-colors text-sm"
+          >
+            Skip for now
+          </button>
+          <button
+            onClick={() => selected && onNext(selected)}
+            disabled={!selected}
+            className={cn(
+              'px-8 py-3 rounded-lg font-medium transition-colors flex items-center gap-2',
+              selected
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            )}
+          >
+            Continue
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
       </div>
     </div>
   );

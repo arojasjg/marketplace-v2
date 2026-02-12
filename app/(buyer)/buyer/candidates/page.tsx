@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,8 +21,18 @@ type FilterType = 'all' | 'recommended' | 'applied' | 'favorites';
 
 export default function BuyerCandidatesPage() {
   const { buyerData, toggleCandidateFavorite } = useAuth();
-  const [selectedJobPost, setSelectedJobPost] = useState<string>('all');
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const searchParams = useSearchParams();
+  const jobPostFromUrl = searchParams.get('jobPost');
+  const [selectedJobPost, setSelectedJobPost] = useState<string>(jobPostFromUrl || 'all');
+  const [activeFilter, setActiveFilter] = useState<FilterType>(jobPostFromUrl ? 'recommended' : 'all');
+
+  // Update filter when URL param changes
+  useEffect(() => {
+    if (jobPostFromUrl) {
+      setSelectedJobPost(jobPostFromUrl);
+      setActiveFilter('recommended');
+    }
+  }, [jobPostFromUrl]);
 
   const filteredCandidates = useMemo(() => {
     let candidates = [...buyerData.candidates];

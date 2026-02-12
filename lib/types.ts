@@ -103,9 +103,11 @@ export interface BuyerJobPost {
   taskCategories?: string[];
   categoryColor?: string;
   workStartDate?: 'immediately' | 'within-one-week' | 'flexible';
-  weeklyHours?: 'part-time' | 'full-time';
+  weeklyHours?: 'half-time' | 'full-time';
   timezone?: string;
   overlapPreference?: 'exact' | 'partial' | 'flexible';
+  shiftStart?: string;
+  shiftEnd?: string;
   softwareTools?: string[];
   culturalFit?: 'independent' | 'structured' | 'not-sure';
   languages?: string[];
@@ -115,9 +117,11 @@ export interface BuyerJobPost {
 export interface JobPostDraft {
   selectedTasks: { id: string; name: string; category: string; frequency?: string; importance?: string }[];
   workStartDate?: 'immediately' | 'within-one-week' | 'flexible';
-  weeklyHours?: 'part-time' | 'full-time';
+  weeklyHours?: 'half-time' | 'full-time';
   timezone?: string;
   overlapPreference?: 'exact' | 'partial' | 'flexible';
+  shiftStart?: string;
+  shiftEnd?: string;
   softwareTools?: string[];
   culturalFit?: 'independent' | 'structured' | 'not-sure';
   languages?: string[];

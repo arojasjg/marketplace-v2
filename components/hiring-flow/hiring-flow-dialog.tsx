@@ -26,11 +26,12 @@ import { X, Save, Trash2 } from 'lucide-react';
 
 interface HiringFlowFullScreenProps {
   onClose: () => void;
+  initialStep?: number;
 }
 
-export function HiringFlowFullScreen({ onClose }: HiringFlowFullScreenProps) {
+export function HiringFlowFullScreen({ onClose, initialStep }: HiringFlowFullScreenProps) {
   const { addBuyerJobPost } = useAuth();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(initialStep || 1);
   const [showExitPrompt, setShowExitPrompt] = useState(false);
   const [draft, setDraft] = useState<JobPostDraft>({
     selectedTasks: [],
@@ -42,7 +43,6 @@ export function HiringFlowFullScreen({ onClose }: HiringFlowFullScreenProps) {
   };
 
   const handleExit = () => {
-    // If no data entered yet, just close
     if (draft.selectedTasks.length === 0) {
       onClose();
       return;
@@ -66,6 +66,25 @@ export function HiringFlowFullScreen({ onClose }: HiringFlowFullScreenProps) {
     addBuyerJobPost(draft, true);
     toast.success('Job post published successfully!');
     onClose();
+  };
+
+  // Save: saves as incomplete and returns to job posts
+  const handleSave = () => {
+    addBuyerJobPost(draft, false);
+    toast.success('Job post saved as draft');
+    onClose();
+  };
+
+  // Skip: moves to the next step without saving current step data
+  const handleSkip = () => {
+    if (currentStep < 9) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  // Navigate to a specific step (used by pencil icons and Edit Availability)
+  const goToStep = (step: number) => {
+    setCurrentStep(step);
   };
 
   const handleSaveDraft = () => {
@@ -99,6 +118,8 @@ export function HiringFlowFullScreen({ onClose }: HiringFlowFullScreenProps) {
               updateDraft({ selectedTasks: tasks.map(t => ({ id: t.id, name: t.name, category: t.category, frequency: t.frequency, importance: t.importance })) });
               setCurrentStep(2);
             }}
+            onSave={handleSave}
+            onSkip={handleSkip}
           />
         )}
 
@@ -110,6 +131,8 @@ export function HiringFlowFullScreen({ onClose }: HiringFlowFullScreenProps) {
               setCurrentStep(3);
             }}
             onBack={() => setCurrentStep(1)}
+            onSave={handleSave}
+            onSkip={handleSkip}
           />
         )}
 
@@ -118,11 +141,15 @@ export function HiringFlowFullScreen({ onClose }: HiringFlowFullScreenProps) {
             initialWeeklyHours={draft.weeklyHours}
             initialTimezone={draft.timezone}
             initialOverlap={draft.overlapPreference}
+            initialShiftStart={draft.shiftStart}
+            initialShiftEnd={draft.shiftEnd}
             onNext={(data) => {
               updateDraft(data);
               setCurrentStep(4);
             }}
             onBack={() => setCurrentStep(2)}
+            onSave={handleSave}
+            onSkip={handleSkip}
           />
         )}
 
@@ -134,6 +161,8 @@ export function HiringFlowFullScreen({ onClose }: HiringFlowFullScreenProps) {
               setCurrentStep(5);
             }}
             onBack={() => setCurrentStep(3)}
+            onSave={handleSave}
+            onSkip={handleSkip}
           />
         )}
 
@@ -145,6 +174,8 @@ export function HiringFlowFullScreen({ onClose }: HiringFlowFullScreenProps) {
               setCurrentStep(6);
             }}
             onBack={() => setCurrentStep(4)}
+            onSave={handleSave}
+            onSkip={handleSkip}
           />
         )}
 
@@ -156,17 +187,23 @@ export function HiringFlowFullScreen({ onClose }: HiringFlowFullScreenProps) {
               setCurrentStep(7);
             }}
             onBack={() => setCurrentStep(5)}
+            onSave={handleSave}
+            onSkip={handleSkip}
           />
         )}
 
         {currentStep === 7 && (
           <Step7BudgetSelection
             initialBudget={draft.monthlyBudget}
+            weeklyHours={draft.weeklyHours}
             onNext={(budget) => {
               updateDraft({ monthlyBudget: budget });
               setCurrentStep(8);
             }}
             onBack={() => setCurrentStep(6)}
+            onSave={handleSave}
+            onSkip={handleSkip}
+            onGoToStep={goToStep}
           />
         )}
 
@@ -176,6 +213,9 @@ export function HiringFlowFullScreen({ onClose }: HiringFlowFullScreenProps) {
             onUpdate={updateDraft}
             onNext={() => setCurrentStep(9)}
             onBack={() => setCurrentStep(7)}
+            onSave={handleSave}
+            onSkip={handleSkip}
+            onGoToStep={goToStep}
           />
         )}
 

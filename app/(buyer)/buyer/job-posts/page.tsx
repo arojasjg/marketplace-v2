@@ -23,6 +23,7 @@ import { Plus, AlertCircle, ArrowRight } from 'lucide-react';
 import type { BuyerJobPostStatus } from '@/lib/types';
 import { toast } from 'sonner';
 import { HiringFlowFullScreen } from '@/components/hiring-flow/hiring-flow-dialog';
+import { RecommendedCandidatesPopup } from '@/components/recommended-candidates-popup';
 
 export default function BuyerJobPostsPage() {
   const { buyerData, updateBuyerJobPostStatus } = useAuth();
@@ -31,6 +32,8 @@ export default function BuyerJobPostsPage() {
   const [incompleteDialogOpen, setIncompleteDialogOpen] = useState(false);
   const [selectedIncompletePost, setSelectedIncompletePost] = useState<string | null>(null);
   const [showHiringFlow, setShowHiringFlow] = useState(false);
+  const [hiringFlowInitialStep, setHiringFlowInitialStep] = useState<number | undefined>(undefined);
+  const [dismissedPopups, setDismissedPopups] = useState<Set<string>>(new Set());
 
   // Auto-open hiring flow when navigated from "Hiring Flow" sidebar tab
   useEffect(() => {
@@ -46,7 +49,13 @@ export default function BuyerJobPostsPage() {
   if (showHiringFlow) {
     return (
       <div className="fixed inset-0 left-64 z-20 bg-white">
-        <HiringFlowFullScreen onClose={() => setShowHiringFlow(false)} />
+        <HiringFlowFullScreen
+          onClose={() => {
+            setShowHiringFlow(false);
+            setHiringFlowInitialStep(undefined);
+          }}
+          initialStep={hiringFlowInitialStep}
+        />
       </div>
     );
   }
@@ -93,7 +102,7 @@ export default function BuyerJobPostsPage() {
           <h1 className="text-2xl font-semibold text-gray-900">Job Posts</h1>
           <p className="text-gray-500 text-sm mt-1">Manage your job listings and track applicants</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setShowHiringFlow(true)}>
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => { setHiringFlowInitialStep(undefined); setShowHiringFlow(true); }}>
           <Plus className="h-4 w-4 mr-2" />
           Create Job Post
         </Button>
@@ -123,8 +132,8 @@ export default function BuyerJobPostsPage() {
                 size="sm"
                 className="bg-white border-amber-300 text-amber-800 hover:bg-amber-100"
                 onClick={() => {
-                  // TODO: Resume editing specific post
-                  toast.info('Resume editing coming soon');
+                  setHiringFlowInitialStep(8);
+                  setShowHiringFlow(true);
                 }}
               >
                 Complete Job Post
@@ -235,6 +244,29 @@ export default function BuyerJobPostsPage() {
         </table>
       </div>
 
+      {/* Recommended Candidates Popup - shown for active job posts with recommended candidates */}
+      {buyerData.jobPosts
+        .filter(jp => jp.status === 'active' && jp.isComplete && !dismissedPopups.has(jp.id))
+        .slice(0, 1) // Show one at a time
+        .map(activePost => {
+          const recommendedCount = buyerData.candidates.filter(
+            c => c.source === 'recommended' && c.recommendedForJobPostIds.includes(activePost.id)
+          ).length;
+          if (recommendedCount === 0) return null;
+          return (
+            <RecommendedCandidatesPopup
+              key={activePost.id}
+              jobPost={activePost}
+              candidates={buyerData.candidates}
+              onClose={() => setDismissedPopups(prev => new Set([...prev, activePost.id]))}
+              onViewCandidates={(jobPostId) => {
+                setDismissedPopups(prev => new Set([...prev, activePost.id]));
+                router.push(`/buyer/candidates?jobPost=${jobPostId}`);
+              }}
+            />
+          );
+        })}
+
       {/* Incomplete Job Post Dialog */}
       <Dialog open={incompleteDialogOpen} onOpenChange={setIncompleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
@@ -268,7 +300,8 @@ export default function BuyerJobPostsPage() {
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
               onClick={() => {
                 setIncompleteDialogOpen(false);
-                toast.info('Job post editor coming soon');
+                setHiringFlowInitialStep(8);
+                setShowHiringFlow(true);
               }}
             >
               Complete Job Post

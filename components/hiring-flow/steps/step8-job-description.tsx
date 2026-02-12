@@ -10,13 +10,15 @@ interface Step8Props {
   onUpdate: (draft: Partial<JobPostDraft>) => void;
   onNext: () => void;
   onBack: () => void;
+  onSave: () => void;
+  onSkip: () => void;
+  onGoToStep: (step: number) => void;
 }
 
-export function Step8JobDescription({ draft, onUpdate, onNext, onBack }: Step8Props) {
+export function Step8JobDescription({ draft, onUpdate, onNext, onBack, onSave, onSkip, onGoToStep }: Step8Props) {
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(draft.jobName || '');
 
-  // Derive auto name
   const categories = [...new Set(draft.selectedTasks.map(t => t.category))];
   const categoryLabels = categories.map(c => {
     if (c === 'legal') return 'Legal';
@@ -38,7 +40,6 @@ export function Step8JobDescription({ draft, onUpdate, onNext, onBack }: Step8Pr
       content: draft.selectedTasks.length > 0
         ? `${draft.selectedTasks.length} task${draft.selectedTasks.length !== 1 ? 's' : ''} selected: ${draft.selectedTasks.map(t => t.name).join(', ')}`
         : 'No tasks selected',
-      onEdit: () => {},
       stepNumber: 1,
     },
     {
@@ -53,7 +54,8 @@ export function Step8JobDescription({ draft, onUpdate, onNext, onBack }: Step8Pr
     {
       title: 'Schedule & Availability',
       content: [
-        draft.weeklyHours ? (draft.weeklyHours === 'part-time' ? 'Part-Time' : 'Full-Time') : null,
+        draft.weeklyHours ? (draft.weeklyHours === 'half-time' ? 'Half-Time (4 hrs/day)' : 'Full-Time (8 hrs/day)') : null,
+        draft.shiftStart && draft.shiftEnd ? `${draft.shiftStart} - ${draft.shiftEnd}` : null,
         draft.timezone || null,
         draft.overlapPreference ? (
           draft.overlapPreference === 'exact' ? 'Exact overlap'
@@ -151,7 +153,11 @@ export function Step8JobDescription({ draft, onUpdate, onNext, onBack }: Step8Pr
                   </div>
                   <p className="text-sm text-gray-600 leading-relaxed">{section.content}</p>
                 </div>
-                <button className="text-gray-400 hover:text-blue-600 transition-colors shrink-0 mt-1">
+                <button
+                  onClick={() => onGoToStep(section.stepNumber)}
+                  className="text-gray-400 hover:text-blue-600 transition-colors shrink-0 mt-1"
+                  title={`Edit ${section.title}`}
+                >
                   <Pencil className="h-4 w-4" />
                 </button>
               </div>
@@ -160,20 +166,34 @@ export function Step8JobDescription({ draft, onUpdate, onNext, onBack }: Step8Pr
         </div>
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-gray-100 py-4 px-8 flex justify-between">
+      <div className="sticky bottom-0 bg-white border-t border-gray-100 py-4 px-8 flex items-center justify-between">
         <button
           onClick={onBack}
           className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
         >
           Back
         </button>
-        <button
-          onClick={onNext}
-          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-        >
-          Continue to Post
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onSave}
+            className="px-6 py-3 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors text-sm"
+          >
+            Save
+          </button>
+          <button
+            onClick={onSkip}
+            className="px-6 py-3 border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 rounded-lg font-medium transition-colors text-sm"
+          >
+            Skip for now
+          </button>
+          <button
+            onClick={onNext}
+            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            Continue to Post
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
       </div>
     </div>
   );

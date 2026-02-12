@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils';
 
 interface Step1Props {
   onNext: (selectedTasks: Task[]) => void;
+  onSave: () => void;
+  onSkip: () => void;
 }
 
 const CATEGORY_ICONS = {
@@ -24,7 +26,7 @@ const CATEGORY_COLORS = {
   admin: { light: 'bg-orange-50', medium: 'bg-orange-100', dark: 'bg-orange-600' },
 };
 
-export function Step1TaskSelection({ onNext }: Step1Props) {
+export function Step1TaskSelection({ onNext, onSave, onSkip }: Step1Props) {
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
 
   const handleTaskToggle = (task: Task) => {
@@ -186,17 +188,32 @@ export function Step1TaskSelection({ onNext }: Step1Props) {
         </div>
       </div>
 
-      {selectedTasks.length > 0 && (
-        <div className="sticky bottom-0 bg-white border-t border-gray-100 py-4 px-8 flex justify-end">
+      <div className="sticky bottom-0 bg-white border-t border-gray-100 py-4 px-8 flex items-center justify-between">
+        <div />
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => onNext(selectedTasks)}
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+            onClick={onSave}
+            className="px-6 py-3 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors text-sm"
           >
-            Continue
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            Save
           </button>
+          <button
+            onClick={onSkip}
+            className="px-6 py-3 border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 rounded-lg font-medium transition-colors text-sm"
+          >
+            Skip for now
+          </button>
+          {selectedTasks.length > 0 && (
+            <button
+              onClick={() => onNext(selectedTasks)}
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+            >
+              Continue
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
